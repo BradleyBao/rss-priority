@@ -1,4 +1,5 @@
 :root {
+  color-scheme:light;
   font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   color:#202c2a;
   background:#f7f8f6;
@@ -22,10 +23,14 @@ button {
   min-height:100vh
 }
 .sidebar {
+  position:sticky;
+  top:0;
+  align-self:start;
   display:flex;
   flex-direction:column;
   min-width:0;
-  min-height:100vh;
+  height:100vh;
+  height:100dvh;
   padding:29px 16px 22px;
   background:#fff;
   border-right:1px solid #e6eae7
@@ -131,6 +136,8 @@ button {
   grid-template-columns:minmax(0,1fr);
   align-content:start;
   min-width:0;
+  min-height:0;
+  overflow-y:auto;
   gap:2px;
   margin-top:10px
 }
@@ -165,6 +172,7 @@ button {
   flex:none
 }
 .sidebar-bottom {
+  flex:none;
   margin-top:auto;
   padding:24px 10px 0
 }
@@ -524,7 +532,10 @@ h1 {
     display:block
   }
   .sidebar {
-    min-height:auto;
+    z-index:10;
+    height:auto;
+    max-height:50dvh;
+    overflow-y:auto;
     padding:14px 16px 12px;
     border-right:0;
     border-bottom:1px solid #e5eae5
@@ -538,7 +549,8 @@ h1 {
   }
   .feed-list {
     display:flex;
-    overflow:auto;
+    overflow-x:auto;
+    overflow-y:hidden;
     margin-top:8px
   }
   .feed-item {
@@ -598,6 +610,123 @@ h1 {
   }
   .search {
     width:100%
+  }
+}
+@media(prefers-color-scheme:dark) {
+  :root {
+    color-scheme:dark;
+    color:#dce8e1;
+    background:#161d1b
+  }
+  .sidebar,.topbar {
+    background:#1d2723;
+    border-color:#34443a
+  }
+  .brand,h1,.article h2 a,.dialog-head h2 {
+    color:#e2f2e8
+  }
+  .brand-mark,.nav-item.active,.feed-item.active {
+    background:#244b3a;
+    color:#9ce1b6
+  }
+  .sidebar-label,.sidebar-heading,.nav-count,.feed-item-count,.sidebar-note {
+    color:#a0b4a7
+  }
+  .nav-item,.feed-item {
+    color:#c5d3c9
+  }
+  .nav-item:hover,.feed-item:hover,.manage-button:hover,.refresh-button:hover {
+    background:#2a3c32
+  }
+  .nav-item.active,.feed-item.active,.nav-item.active .nav-symbol {
+    color:#a6e6ba
+  }
+  .nav-symbol,.topbar-title,.topbar-right,#page-subtitle,.article-meta,.article p,.empty-state,.pin-empty,.list-heading {
+    color:#a8b9ae
+  }
+  .priority-nav .nav-symbol {
+    background:#68352f;
+    color:#ffd0c7
+  }
+  .priority-nav .nav-count,.critical-eyebrow,.critical-total,.pin-label {
+    color:#ff9b86
+  }
+  .feed-badge {
+    background:#393a60;
+    color:#c9c9ff
+  }
+  .feed-item:nth-child(3n+2) .feed-badge {
+    background:#554032;
+    color:#ffcf9f
+  }
+  .feed-item:nth-child(3n) .feed-badge {
+    background:#2d514b;
+    color:#a1ded2
+  }
+  .manage-button,.refresh-button,.search,.pin-empty {
+    background:#27342d;
+    border-color:#46594a;
+    color:#b9e5c6
+  }
+  .search input {
+    color:#e2f2e8
+  }
+  .search input::placeholder {
+    color:#a8b9ae
+  }
+  .search:focus-within {
+    border-color:#8adba9;
+    box-shadow:0 0 0 2px #8adba933
+  }
+  .eyebrow,.article-source,.article h2 a:hover {
+    color:#8ed5a7
+  }
+  .critical-heading h2,.pin h3 a {
+    color:#f2e4dd
+  }
+  .pin {
+    background:#332622;
+    border-color:#70463d;
+    border-left-color:#e87d6b
+  }
+  .pin-id,.pin-meta {
+    color:#c5aea5
+  }
+  .pin h3 a:hover {
+    color:#ffad9c
+  }
+  .toolbar,.article-list,.article {
+    border-color:#36463c
+  }
+  .priority-tag {
+    background:#4c3b27;
+    color:#ffd08d
+  }
+  .manage-dialog {
+    background:#202b25;
+    border-color:#4a5c4f;
+    box-shadow:0 16px 60px #0009;
+    color:#dce8e1
+  }
+  .manage-dialog::backdrop {
+    background:#050b09b8
+  }
+  .manage-dialog p,.dialog-footnote {
+    color:#b8c9bc!important
+  }
+  .manage-dialog pre {
+    background:#17221b;
+    color:#bee9c9
+  }
+  .close-button {
+    color:#c0cec2
+  }
+  .dialog-link {
+    background:#267a52;
+    color:#fff
+  }
+  .dialog-link:hover {
+    background:#329565
   }
 }
 @media(max-width:400px) {
