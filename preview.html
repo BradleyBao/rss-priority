@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f6">
+  <title>RSS Priority - Design Preview</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Feed navigation">
+      <a class="brand" href="./" aria-label="RSS Priority home"><span class="brand-mark" aria-hidden="true">◉</span><span>RSS<span class="brand-light">Priority</span></span></a>
+      <div class="sidebar-label">LIBRARY</div>
+      <nav class="primary-nav" aria-label="Views">
+        <button class="nav-item active" type="button" data-view="all"><span class="nav-symbol" aria-hidden="true">▦</span><span>All updates</span><span class="nav-count" id="all-count">0</span></button>
+        <button class="nav-item priority-nav" id="priority-nav" type="button"><span class="nav-symbol" aria-hidden="true">!</span><span>Critical alerts</span><span class="nav-count" id="pin-count">0</span></button>
+        <button class="nav-item" type="button" data-view="saved"><span class="nav-symbol" aria-hidden="true">☆</span><span>Saved</span><span class="nav-count" id="saved-count">0</span></button>
+      </nav>
+      <div class="sidebar-heading"><span class="sidebar-label">YOUR FEEDS</span><span id="feed-count">0</span></div>
+      <nav id="feed-list" class="feed-list" aria-label="Feeds"></nav>
+      <div class="sidebar-bottom"><button id="manage-feeds" class="manage-button" type="button"><span aria-hidden="true">＋</span> Manage feeds</button><div class="sidebar-note">Feeds update through GitHub Actions</div></div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar"><span class="topbar-title">Priority board</span><span class="topbar-right"><span class="status-dot" aria-hidden="true"></span><span id="sync-status">Loading feeds</span></span></header>
+      <main class="main-content">
+        <div class="page-heading"><div><div class="eyebrow">YOUR DAILY BRIEFING</div><h1 id="page-title">All updates</h1><p id="page-subtitle">The most important stories from your feeds, first.</p></div><button class="refresh-button" id="refresh-button" type="button" title="Reload the published feed snapshot" aria-label="Reload feed snapshot">↻ <span>Refresh</span></button></div>
+        <section id="critical-section" class="critical-section" aria-labelledby="critical-title"><div class="critical-heading"><div><div class="critical-eyebrow">LIVE PRIORITY</div><h2 id="critical-title">Critical alerts</h2></div><span id="critical-total" class="critical-total">0 active</span></div><div id="pin-list" class="pin-list"></div></section>
+        <div class="toolbar"><div class="tabs" role="group" aria-label="Article filter"><button type="button" class="tab active" data-view="all">All updates</button><button type="button" class="tab" data-view="saved">Saved</button></div><label class="search"><span aria-hidden="true">⌕</span><input id="search-input" type="search" placeholder="Search updates" aria-label="Search updates"></label></div>
+        <div class="list-heading"><span id="results-label">ARTICLES</span><span>RANKED BY PRIORITY</span></div>
+        <div id="article-list" class="article-list" aria-live="polite"><div class="empty-state">Loading your feeds...</div></div>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="manage-dialog" class="manage-dialog"><form method="dialog"><div class="dialog-head"><h2>Manage feeds</h2><button type="submit" class="close-button" aria-label="Close">×</button></div><p>Public RSS and Atom subscriptions are listed in <strong>config/feeds.json</strong>. Edit the JSON array and commit the change; GitHub Actions will rebuild the board.</p><pre>["https://example.com/feed.xml"]</pre><a class="dialog-link" href="https://github.com/BradleyBao/rss-priority/edit/main/config/feeds.json" target="_blank" rel="noopener noreferrer">Edit feed list on GitHub ↗</a><p class="dialog-footnote">Keep credentials out of this public file. Visitors can filter and save articles in this browser.</p></form></dialog>
+  <script id="preview-data" type="application/json">{"updatedAt":"2026-10-27T12:00:00Z","feeds":[{"id":"0","title":"PHP Security","count":3},{"id":"1","title":"Security Desk","count":2},{"id":"2","title":"GitHub Blog","count":2}],"pins":[{"id":"CVE-2099-12345","cve":"CVE-2099-12345","title":"Critical PHP runtime vulnerability reported (demo)","url":"https://example.com/php-security-report","feed":"PHP Security","feedIds":["0","1"],"date":"2026-10-27T10:15:00Z","reports":2,"reason":"Critical advisory"},{"id":"https://example.com/service-incident","cve":null,"title":"Major service outage affects package downloads (demo)","url":"https://example.com/service-incident","feed":"Security Desk","feedIds":["1"],"date":"2026-10-27T08:30:00Z","reports":1,"reason":"Critical report"}],"items":[{"feedId":"0","feed":"PHP Security","title":"Critical PHP runtime vulnerability reported (demo)","url":"https://example.com/php-security-report","date":"2026-10-27T10:15:00Z","summary":"A sample security advisory shows how urgent CVE reports stay at the top of the board.","cves":["CVE-2099-12345"],"priorityScore":100},{"feedId":"1","feed":"Security Desk","title":"Major service outage affects package downloads (demo)","url":"https://example.com/service-incident","date":"2026-10-27T08:30:00Z","summary":"A sample incident shows that multiple urgent stories can appear together above the news.","cves":[],"priorityScore":100},{"feedId":"1","feed":"Security Desk","title":"New details on CVE-2099-12345 (demo)","url":"https://example.com/php-followup","date":"2026-10-27T07:20:00Z","summary":"A second report about the same CVE is grouped into one critical alert.","cves":["CVE-2099-12345"],"priorityScore":100},{"feedId":"0","feed":"PHP Security","title":"Security update planned for PHP tooling","url":"https://example.com/php-tooling","date":"2026-10-27T06:00:00Z","summary":"A security-related update ranks above regular news without becoming a critical alert.","cves":[],"priorityScore":50},{"feedId":"2","feed":"GitHub Blog","title":"What is new in GitHub Actions this month","url":"https://example.com/actions","date":"2026-10-26T15:00:00Z","summary":"Recent improvements to workflows, automation, and developer experience.","cves":[],"priorityScore":0},{"feedId":"0","feed":"PHP Security","title":"Patch released for an earlier PHP advisory (demo)","url":"https://example.com/php-patch","date":"2026-10-26T09:00:00Z","summary":"Patched advisories leave the critical area while their reports remain in the news list.","cves":["CVE-2099-00001"],"priorityScore":0},{"feedId":"2","feed":"GitHub Blog","title":"Building reliable workflows for small teams","url":"https://example.com/workflows","date":"2026-10-24T16:00:00Z","summary":"Simple automation patterns that keep routine work moving.","cves":[],"priorityScore":0}]}</script>
+</body>
+</html>

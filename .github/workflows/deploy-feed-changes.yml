@@ -1,0 +1,20 @@
+name: Deploy site changes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/feeds.json'
+      - 'index.html'
+      - 'assets/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/update-rss.yml
