@@ -21,7 +21,9 @@ The generated page will be at the URL shown in **Settings > Pages**. The reposit
 
 ## Automatic updates
 
-The shortest interval GitHub Actions accepts for `schedule` is **every five minutes**. This workflow runs at minutes 2, 7, 12, and so on (`2-59/5 * * * *`) to avoid the top-of-hour peak. Scheduled runs are best effort: GitHub may delay or drop runs during high load. A feed is fetched only when the workflow runs; this is not a guaranteed five-minute delivery service. Changes to `config/feeds.json` on `main` start a deployment without waiting for the next scheduled run; GitHub's queue and build still take some time. You can also trigger a run manually from the Actions tab.
+The shortest interval GitHub Actions accepts for `schedule` is **every five minutes**. The dedicated **Refresh feeds** workflow runs at minutes 2, 7, 12, and so on (`2-59/5 * * * *`) to avoid the top-of-hour peak. It calls the same build and deploy job as push and manual runs. Scheduled runs are best effort: GitHub may delay or drop runs during high load. A feed is fetched only when the workflow runs; this is not a guaranteed five-minute delivery service. Changes to `config/feeds.json` on `main` start a deployment without waiting for the next scheduled run; GitHub's queue and build still take some time. You can also trigger **Update RSS site** manually from the Actions tab.
+
+To verify automatic updates, look for runs named **Refresh feeds** in the Actions tab. Commit timestamps do not change during scheduled runs because the generated snapshot is deployed as an artifact, not committed to the repository. If no scheduled runs appear after the workflow is on the default branch, check that **Refresh feeds** is enabled under Actions; GitHub may delay or skip scheduled starts.
 
 GitHub may disable scheduled workflows in a public repository after 60 days without repository activity. Re-enable the workflow in the Actions tab if that happens.
 

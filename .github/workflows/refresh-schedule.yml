@@ -1,0 +1,14 @@
+name: Refresh feeds
+
+on:
+  schedule:
+    - cron: '2-59/5 * * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  refresh:
+    uses: ./.github/workflows/update-rss.yml
