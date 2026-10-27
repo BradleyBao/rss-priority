@@ -23,6 +23,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Verify GitHub Pages source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type)
+          if [ "$source" != workflow ]; then
+            echo "::error::GitHub Pages is serving a branch. Set Settings > Pages > Build and deployment > Source to GitHub Actions, then rerun this workflow."
+            exit 1
+          fi
       - uses: actions/configure-pages@v5
       - name: Fetch feeds
         env:
