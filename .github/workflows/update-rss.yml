@@ -30,18 +30,28 @@ jobs:
             echo "::error::GitHub Pages is serving a branch. Set Settings > Pages > Build and deployment > Source to GitHub Actions, then rerun this workflow."
             exit 1
           fi
-      - uses: actions/configure-pages@v5
+      - id: pages
+        uses: actions/configure-pages@v5
       - name: Fetch feeds
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 scripts/build_feeds.py
+      - name: Check for feed changes
+        id: changes
+        env:
+          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: python3 scripts/check_feed_changes.py
       - name: Assemble site
+        if: steps.changes.outputs.deploy == 'true'
         run: |
           mkdir -p _site/assets
           cp index.html feeds.json _site/
           cp assets/app.js assets/style.css assets/favicon.svg _site/assets/
       - uses: actions/upload-pages-artifact@v3
+        if: steps.changes.outputs.deploy == 'true'
         with:
           path: _site
       - id: deployment
+        if: steps.changes.outputs.deploy == 'true'
         uses: actions/deploy-pages@v4

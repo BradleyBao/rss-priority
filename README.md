@@ -15,13 +15,13 @@ A static priority board published with GitHub Pages. Public RSS and Atom subscri
 
    **Use RSS or Atom feed URLs, not the home page of a site.** The array may contain up to **30** URLs. The starter list includes security, PHP, infrastructure, and general tech feeds; edit it to suit your interests. 
 2. Open **Settings > Pages** and set **Build and deployment > Source** to **GitHub Actions**.
-3. Open **Actions > Update RSS site > Run workflow** for the first build. Merged pull requests or direct commits changing `config/feeds.json` on `main` trigger **Deploy site changes** automatically. Site code changes and the five-minute schedule also rebuild the page.
+3. Open **Actions > Update RSS site > Run workflow** for the first build. Merged pull requests or direct commits changing `config/feeds.json` on `main` trigger **Deploy site changes** automatically. Site code changes and the 15-minute schedule also rebuild the page.
 
 The generated page will be at the URL shown in **Settings > Pages**. The repository's default branch must be `main` for the included workflow; change its `push` branch if yours differs. 
 
 ## Automatic updates
 
-The shortest interval GitHub Actions accepts for `schedule` is **every five minutes**. The dedicated **Refresh feeds** workflow runs at minutes 2, 7, 12, and so on (`2-59/5 * * * *`) to avoid the top-of-hour peak. It calls the same build and deploy job as push and manual runs. Scheduled runs are best effort: GitHub may delay or drop runs during high load. A feed is fetched only when the workflow runs; this is not a guaranteed five-minute delivery service. Changes to `config/feeds.json` on `main` start a deployment without waiting for the next scheduled run; GitHub's queue and build still take some time. You can also trigger **Update RSS site** manually from the Actions tab.
+The dedicated **Refresh feeds** workflow runs every 15 minutes (`*/15 * * * *`). GitHub Actions accepts schedules as frequent as every five minutes, but scheduled runs are best effort and may be delayed or dropped during high load. Each scheduled run fetches the feeds and compares the result with the published `feeds.json`, excluding its build timestamp. It uploads and deploys a new Pages artifact only when the feeds, alerts, or articles changed. A missing or unreadable published snapshot also triggers deployment. This can still run CI every 15 minutes, but avoids deploying the same board repeatedly. Changes to `config/feeds.json` on `main` and manual runs deploy immediately without waiting for content to differ.
 
 To verify automatic updates, look for runs named **Refresh feeds** in the Actions tab. Commit timestamps do not change during scheduled runs because the generated snapshot is deployed as an artifact, not committed to the repository. If no scheduled runs appear after the workflow is on the default branch, check that **Refresh feeds** is enabled under Actions; GitHub may delay or skip scheduled starts.
 

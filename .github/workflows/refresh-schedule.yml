@@ -2,7 +2,8 @@ name: Refresh feeds
 
 on:
   schedule:
-    - cron: '2-59/5 * * * *'
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
