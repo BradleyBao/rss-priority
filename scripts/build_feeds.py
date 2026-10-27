@@ -21,10 +21,13 @@ MAX_FEEDS = 30
 MAX_ITEMS = 150
 PIN_LIFETIME = timedelta(hours=72)
 CVE_PATTERN = re.compile(r"\bCVE-\d{4}-\d{4,}\b", re.IGNORECASE)
-ACTIVE_EXPLOIT = re.compile(r"\b(?:actively exploited|active exploitation|zero[ -]day|remote code execution|rce)\b", re.IGNORECASE)
+ACTIVE_EXPLOIT = re.compile(r"\b(?:actively exploited|active exploitation|now exploited|exploited in (?:the )?wild|zero[ -]day|remote code execution|rce)\b", re.IGNORECASE)
+ACTIVE_INCIDENT = re.compile(r"\b(?:actively exploited|now exploited|exploited in (?:the )?wild|ongoing (?:major )?outage|major outage|critical outage)\b", re.IGNORECASE)
 CRITICAL_EVENT = re.compile(r"\b(?:critical|severe|emergency|major)\b.*\b(?:security|vulnerability|flaw|outage|incident)\b|\b(?:security|vulnerability|flaw|outage|incident)\b.*\b(?:critical|severe|emergency|major)\b", re.IGNORECASE)
 HIGH_EVENT = re.compile(r"\b(?:security update|security advisory|vulnerability|data breach|outage)\b", re.IGNORECASE)
 RESOLVED_EVENT = re.compile(r"\b(?:resolved|restored|recovered|patched|fixed|patch released|fix released)\b", re.IGNORECASE)
+PATCH_HEADLINE = re.compile(r"\b(?:patch(?:es|ed)?|fix(?:es|ed)?|backport(?:s|ed)?|security updates? released|remediat(?:es|ed|ion))\b", re.IGNORECASE)
+INCIDENT_ALIAS = re.compile(r"\b[A-Za-z]+\d+[A-Za-z][A-Za-z0-9]*\b")
 VENDOR_ADVISORY = re.compile(r"^/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/security/advisories/(GHSA-[A-Za-z0-9-]+)$")
 
 
@@ -180,44 +183,82 @@ def recent_date(value, now):
 
 def build_snapshot(feeds, items, now=None, lookup=advisory_status):
     now = now or datetime.now(timezone.utc)
-    groups = {}
+    parents = {}
     for item in items:
         item["cves"] = sorted(set(match.upper() for match in CVE_PATTERN.findall(f"{item['title']} {item['summary']}")))
+        if not recent_date(item["date"], now):
+            continue
         for cve in item["cves"]:
-            if recent_date(item["date"], now):
-                groups.setdefault(cve, []).append(item)
+            parents.setdefault(cve, cve)
+        if item["cves"]:
+            for cve in item["cves"][1:]:
+                parents[cve] = item["cves"][0]
+
+    def root(cve):
+        while parents[cve] != cve:
+            cve = parents[cve]
+        return cve
+
+    groups = {}
+    for item in items:
+        if recent_date(item["date"], now) and item["cves"]:
+            group = groups.setdefault(root(item["cves"][0]), {"cves": set(), "reports": {}})
+            group["cves"].update(item["cves"])
+            group["reports"][item["url"]] = item
+
+    aliases = {}
+    for group_id, group in groups.items():
+        for report in group["reports"].values():
+            for alias in INCIDENT_ALIAS.findall(report["title"]):
+                aliases.setdefault(alias.lower(), set()).add(group_id)
+    for item in items:
+        if item["cves"] or not recent_date(item["date"], now) or not ACTIVE_INCIDENT.search(item["title"]) \
+                or PATCH_HEADLINE.search(item["title"]):
+            continue
+        matches = set().union(*(aliases.get(alias.lower(), set()) for alias in INCIDENT_ALIAS.findall(item["title"])))
+        if len(matches) == 1:
+            groups[next(iter(matches))]["reports"][item["url"]] = item
 
     with ThreadPoolExecutor(max_workers=8) as executor:
-        statuses = dict(zip(groups, executor.map(lookup, groups)))
+        statuses = dict(zip(parents, executor.map(lookup, parents)))
     pins = []
     pinned_cves = set()
-    for cve, reports in groups.items():
-        status = statuses[cve]
-        if status["cleared"]:
+    pinned_urls = set()
+    grouped_urls = set()
+    for group in groups.values():
+        cves = sorted(group["cves"])
+        reports = sorted(group["reports"].values(), key=lambda item: item["date"], reverse=True)
+        grouped_urls.update(group["reports"])
+        active_cves = [cve for cve in cves if not statuses[cve]["cleared"]]
+        if not active_cves:
             continue
-        reports.sort(key=lambda item: item["date"], reverse=True)
         latest = reports[0]
-        text = " ".join(f"{item['title']} {item['summary']}" for item in reports)
-        urgent = status["severity"] == "critical" or ACTIVE_EXPLOIT.search(text) or CRITICAL_EVENT.search(text) or re.search(r"\bPHP\b", text, re.IGNORECASE)
+        if PATCH_HEADLINE.search(latest["title"]) or RESOLVED_EVENT.search(latest["title"]):
+            continue
+        urgent = any(statuses[cve]["severity"] == "critical" for cve in active_cves) or any(
+            ACTIVE_EXPLOIT.search(report["title"]) or CRITICAL_EVENT.search(report["title"])
+            for report in reports
+        )
         if not urgent:
             continue
-        pinned_cves.add(cve)
-        pins.append({"id": cve, "cve": cve, "title": latest["title"], "url": latest["url"],
+        pinned_cves.update(active_cves)
+        pinned_urls.update(group["reports"])
+        pins.append({"id": cves[0], "cve": active_cves[0], "cves": active_cves,
+                     "title": latest["title"], "url": latest["url"], "urls": sorted(group["reports"]),
                      "feed": latest["feed"], "feedIds": sorted(set(item["feedId"] for item in reports)),
-                     "date": latest["date"], "reports": len(reports), "reason": "Critical advisory" if status["severity"] == "critical" else "Urgent security report"})
+                     "date": latest["date"], "reports": len(reports),
+                     "reason": "Critical advisory" if any(statuses[cve]["severity"] == "critical" for cve in active_cves) else "Active exploitation report"})
 
-    pinned_urls = set()
     resolved_urls = {item["url"] for item in items if RESOLVED_EVENT.search(item["title"])}
     for item in items:
-        recent = recent_date(item["date"], now)
-        text = f"{item['title']} {item['summary']}"
-        if not item["cves"] and recent and item["url"] not in resolved_urls and (
-            ACTIVE_EXPLOIT.search(text) or CRITICAL_EVENT.search(item["title"])
+        if not item["cves"] and recent_date(item["date"], now) and item["url"] not in resolved_urls \
+                and item["url"] not in grouped_urls and not PATCH_HEADLINE.search(item["title"]) and (
+            ACTIVE_INCIDENT.search(item["title"])
         ):
             pinned_urls.add(item["url"])
-            pins.append({"id": item["url"], "cve": None, "title": item["title"], "url": item["url"],
+            pins.append({"id": item["url"], "cve": None, "cves": [], "title": item["title"], "url": item["url"], "urls": [item["url"]],
                          "feed": item["feed"], "feedIds": [item["feedId"]], "date": item["date"],
-                         "reports": 1, "reason": "Critical report"})
+                         "reports": 1, "reason": "Active incident report"})
     for item in items:
         recent = recent_date(item["date"], now)
         text = f"{item['title']} {item['summary']}"

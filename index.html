@@ -17,9 +17,8 @@
       <nav class="primary-nav" aria-label="Views">
         <button class="nav-item active" type="button" data-view="all"><span class="nav-symbol" aria-hidden="true">▦</span><span>All updates</span><span class="nav-count" id="all-count">0</span></button>
         <button class="nav-item priority-nav" id="priority-nav" type="button"><span class="nav-symbol" aria-hidden="true">!</span><span>Critical alerts</span><span class="nav-count" id="pin-count">0</span></button>
-        <button class="nav-item" type="button" data-view="saved"><span class="nav-symbol" aria-hidden="true">☆</span><span>Saved</span><span class="nav-count" id="saved-count">0</span></button>
       </nav>
-      <div class="sidebar-heading"><span class="sidebar-label">YOUR FEEDS</span><span id="feed-count">0</span></div>
+      <div class="sidebar-heading"><span class="sidebar-label">FEEDS</span><span id="feed-count">0</span></div>
       <nav id="feed-list" class="feed-list" aria-label="Feeds"></nav>
       <div class="sidebar-bottom"><button id="manage-feeds" class="manage-button" type="button"><span aria-hidden="true">＋</span> Manage feeds</button><div class="sidebar-note">Feeds update through GitHub Actions</div></div>
     </aside>
@@ -29,13 +28,13 @@
       <main class="main-content">
         <div class="page-heading"><div><div class="eyebrow">YOUR DAILY BRIEFING</div><h1 id="page-title">All updates</h1><p id="page-subtitle">The most important stories from your feeds, first.</p></div><button class="refresh-button" id="refresh-button" type="button" title="Reload the published feed snapshot" aria-label="Reload feed snapshot">↻ <span>Refresh</span></button></div>
         <section id="critical-section" class="critical-section" aria-labelledby="critical-title"><div class="critical-heading"><div><div class="critical-eyebrow">LIVE PRIORITY</div><h2 id="critical-title">Critical alerts</h2></div><span id="critical-total" class="critical-total">0 active</span></div><div id="pin-list" class="pin-list"></div></section>
-        <div class="toolbar"><div class="tabs" role="group" aria-label="Article filter"><button type="button" class="tab active" data-view="all">All updates</button><button type="button" class="tab" data-view="saved">Saved</button></div><label class="search"><span aria-hidden="true">⌕</span><input id="search-input" type="search" placeholder="Search updates" aria-label="Search updates"></label></div>
+        <div class="toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="search-input" type="search" placeholder="Search updates" aria-label="Search updates"></label></div>
         <div class="list-heading"><span id="results-label">ARTICLES</span><span>RANKED BY PRIORITY</span></div>
         <div id="article-list" class="article-list" aria-live="polite"><div class="empty-state">Loading your feeds...</div></div>
       </main>
     </div>
   </div>
 
-  <dialog id="manage-dialog" class="manage-dialog"><form method="dialog"><div class="dialog-head"><h2>Manage feeds</h2><button type="submit" class="close-button" aria-label="Close">×</button></div><p>Public RSS and Atom subscriptions are listed in <strong>config/feeds.json</strong>. Edit the JSON array and commit the change; GitHub Actions will rebuild the board.</p><pre>["https://example.com/feed.xml"]</pre><a class="dialog-link" href="https://github.com/BradleyBao/rss-priority/edit/main/config/feeds.json" target="_blank" rel="noopener noreferrer">Edit feed list on GitHub ↗</a><p class="dialog-footnote">Keep credentials out of this public file. Visitors can filter and save articles in this browser.</p></form></dialog>
+  <dialog id="manage-dialog" class="manage-dialog"><form method="dialog"><div class="dialog-head"><h2>Manage feeds</h2><button type="submit" class="close-button" aria-label="Close">×</button></div><p>Public RSS and Atom subscriptions are listed in <strong>config/feeds.json</strong>. Edit the JSON array and commit the change; GitHub Actions will rebuild the board.</p><pre>["https://example.com/feed.xml"]</pre><a class="dialog-link" href="https://github.com/BradleyBao/rss-priority/edit/main/config/feeds.json" target="_blank" rel="noopener noreferrer">Edit feed list on GitHub ↗</a><p class="dialog-footnote">Keep credentials out of this public file. Visitors can filter articles in this browser.</p></form></dialog>
 </body>
 </html>

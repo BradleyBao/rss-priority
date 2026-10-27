@@ -100,6 +100,26 @@ class PriorityTests(unittest.TestCase):
         self.assertEqual(grouped["feedIds"], ["0", "1"])
         self.assertEqual(snapshot["items"][0]["priorityScore"], 100)
 
+    def test_two_cves_in_one_incident_make_one_pin(self):
+        item = self.item("PHP2Shell flaws now exploited in the wild", "https://example.com/php2shell")
+        item["summary"] = "CVE-2099-12345 and CVE-2099-67890 are under active exploitation."
+        snapshot = build_feeds.build_snapshot([], [item], self.now, lambda cve: {"severity": None, "cleared": False})
+        self.assertEqual(len(snapshot["pins"]), 1)
+        self.assertEqual(snapshot["pins"][0]["cves"], ["CVE-2099-12345", "CVE-2099-67890"])
+        self.assertEqual(snapshot["pins"][0]["reports"], 1)
+
+    def test_active_followup_joins_cve_incident_without_editorial_story(self):
+        initial = self.item("PHP2Shell flaws now exploited in the wild", "https://example.com/initial", hours_ago=2)
+        initial["summary"] = "CVE-2099-12345 and CVE-2099-67890"
+        followup = self.item("CISA confirms PHP2Shell vulnerabilities now exploited in attacks", "https://example.com/followup")
+        commentary = self.item("Wiz: No successful PHP2Shell exploits seen so far", "https://example.com/commentary", hours_ago=0)
+        snapshot = build_feeds.build_snapshot([], [initial, followup, commentary], self.now,
+                                              lambda cve: {"severity": None, "cleared": False})
+        self.assertEqual(len(snapshot["pins"]), 1)
+        self.assertEqual(snapshot["pins"][0]["title"], followup["title"])
+        self.assertEqual(snapshot["pins"][0]["reports"], 2)
+        self.assertEqual(set(snapshot["pins"][0]["urls"]), {initial["url"], followup["url"]})
+
     def test_patch_removes_pin_and_recent_report_stays_in_news(self):
         item = self.item("Critical PHP CVE-2099-12345", "https://example.com/a")
         snapshot = build_feeds.build_snapshot([], [item], self.now, lambda cve: {"severity": "critical", "cleared": True})
@@ -124,6 +144,21 @@ class PriorityTests(unittest.TestCase):
         self.assertEqual(len(snapshot["pins"]), 1)
         self.assertIsNone(snapshot["pins"][0]["cve"])
         self.assertEqual(snapshot["items"][0]["priorityScore"], 100)
+
+    def test_patch_news_and_summary_keywords_do_not_create_pins(self):
+        patch_news = self.item("HPE Patches Dozens of Critical Flaws in Networking Products", "https://example.com/hpe")
+        patch_news["summary"] = "Eight max-severity defects could lead to remote code execution."
+        zero_day_patch = self.item("Apple backports zero-day patches to older phones", "https://example.com/apple")
+        general = self.item("Critical HTTP2Shell vulnerability triggers emergency patches", "https://example.com/http")
+        snapshot = build_feeds.build_snapshot([], [patch_news, zero_day_patch, general], self.now,
+                                              lambda cve: None)
+        self.assertEqual(snapshot["pins"], [])
+
+    def test_patch_announcement_does_not_pin_cve_with_incomplete_advisory(self):
+        item = self.item("Critical CVE-2099-12345 patched in emergency release", "https://example.com/patch")
+        snapshot = build_feeds.build_snapshot([], [item], self.now,
+                                              lambda cve: {"severity": "critical", "cleared": False})
+        self.assertEqual(snapshot["pins"], [])
 
     def test_vendor_advisory_patched_versions_clear_cve(self):
         public = [{"cve_id": "CVE-2024-4577", "severity": "critical", "vulnerabilities": [],

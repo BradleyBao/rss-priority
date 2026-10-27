@@ -29,13 +29,13 @@ The workflow has read access to repository contents and permission to deploy Git
 
 ## Priority and automatic unpinning
 
-The board ranks recent security and outage reports above ordinary updates. Critical reports appear together in the red **Critical alerts** section. Reports sharing a CVE ID become one alert with a report count; other critical reports are identified by their article URL. The 150 most recent fetched articles are considered for ranking.
+The board ranks recent security and outage reports above ordinary updates. Explicit active incidents appear together in the red **Critical alerts** section. CVEs reported together form one alert, and active follow-ups sharing a distinctive incident name can join it. Patch-announcement headlines stay in the normal article list. The 150 most recent fetched articles are considered for ranking; title matching is still a heuristic, not a verified incident status.
 
 For a recent CVE, CI queries GitHub's public advisory API and, when linked, the vendor's GitHub security advisory. A CVE alert leaves the critical section when a trusted advisory lists patched versions for all affected versions it describes or withdraws the advisory. This means a patch is *available*, not that every installation has been updated. If the advisory lookup fails or has no patch information, the alert remains eligible until **72 hours after the latest relevant article date**. A newer report can renew that window. Articles stay in the normal list after their alert leaves the critical section.
 
 Non-CVE critical reports also expire after 72 hours. A resolved update using the same article URL clears an outage alert sooner. Separate follow-up URLs cannot be matched reliably without a shared incident ID, so those use the time limit. Headlines without a publication date do not become critical alerts. The time limit keeps old alerts from staying pinned indefinitely; it does **not** claim the underlying issue is resolved.
 
-The ranking and alert rules are in [`scripts/build_feeds.py`](scripts/build_feeds.py). The page has no read/unread state because it is a shared information board; saved articles remain local to each visitor's browser.
+The ranking and alert rules are in [`scripts/build_feeds.py`](scripts/build_feeds.py). The page has no read/unread or saved state because it is a shared information board whose article snapshot rotates.
 
 ## Preview and local development
 

@@ -1,14 +1,6 @@
 (() => {
   const $ = (selector) => document.querySelector(selector);
-  const state = { data: null, view: 'all', feedId: null, query: '' };
-  const savedKey = 'rss-priority-saved-v1';
-  let saved;
-  try { saved = new Set(JSON.parse(localStorage.getItem(savedKey) || '[]')); }
-  catch { saved = new Set(); }
-  const persist = () => {
-    try { localStorage.setItem(savedKey, JSON.stringify([...saved])); }
-    catch { /* The board still works when browser storage is disabled. */ }
-  };
+  const state = { data: null, feedId: null, query: '' };
   const isHttpUrl = (value) => {
     try { return ['http:', 'https:'].includes(new URL(value).protocol); }
     catch { return false; }
@@ -28,6 +20,7 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = `feed-item${state.feedId === feed.id ? ' active' : ''}`;
+      button.title = feed.title;
       button.setAttribute('aria-pressed', String(state.feedId === feed.id));
       const badge = document.createElement('span');
       badge.className = 'feed-badge';
@@ -57,7 +50,7 @@
     label.textContent = pin.reason || 'Critical report';
     const id = document.createElement('span');
     id.className = 'pin-id';
-    id.textContent = pin.cve || 'LIVE ALERT';
+    id.textContent = pin.cves?.length ? pin.cves.join(' · ') : pin.cve || 'LIVE ALERT';
     top.append(label, id);
     const title = document.createElement('h3');
     const link = document.createElement('a');
@@ -105,17 +98,7 @@
     const summary = document.createElement('p');
     summary.textContent = item.summary || 'Open the article to read more.';
     body.append(meta, title, summary);
-    const save = document.createElement('button');
-    save.type = 'button';
-    save.className = `icon-button${saved.has(item.url) ? ' selected' : ''}`;
-    save.textContent = saved.has(item.url) ? '★' : '☆';
-    save.title = saved.has(item.url) ? 'Remove from saved' : 'Save article';
-    save.setAttribute('aria-label', save.title);
-    save.addEventListener('click', () => {
-      saved.has(item.url) ? saved.delete(item.url) : saved.add(item.url);
-      persist(); render();
-    });
-    row.append(body, save);
+    row.append(body);
     return row;
   }
 
@@ -123,27 +106,21 @@
     if (!state.data) return;
     const visiblePins = state.data.pins.filter((pin) =>
       (state.feedId === null || pin.feedIds.includes(state.feedId)) &&
-      matches([pin.title, pin.cve || '', pin.feed, pin.reason || ''])
+      matches([pin.title, ...(pin.cves || [pin.cve || '']), pin.feed, pin.reason || ''])
     );
-    const pinnedCves = new Set(visiblePins.map((pin) => pin.cve).filter(Boolean));
-    const pinnedUrls = new Set(visiblePins.map((pin) => pin.url));
+    const pinnedCves = new Set(visiblePins.flatMap((pin) => pin.cves || [pin.cve]).filter(Boolean));
+    const pinnedUrls = new Set(visiblePins.flatMap((pin) => pin.urls || [pin.url]));
     const items = state.data.items.filter((item) =>
       (state.feedId === null || item.feedId === state.feedId) &&
-      (state.view !== 'saved' || saved.has(item.url)) &&
       matches([item.title, item.summary, item.feed, ...(item.cves || [])]) &&
-      (state.view === 'saved' || (!pinnedUrls.has(item.url) && !(item.cves || []).some((cve) => pinnedCves.has(cve))))
+      !pinnedUrls.has(item.url) && !(item.cves || []).some((cve) => pinnedCves.has(cve))
     );
 
     $('#all-count').textContent = state.data.items.length;
-    $('#saved-count').textContent = state.data.items.filter((item) => saved.has(item.url)).length;
     $('#pin-count').textContent = state.data.pins.length;
     $('#critical-total').textContent = `${visiblePins.length} active`;
-    document.querySelectorAll('[data-view]').forEach((button) => {
-      button.classList.toggle('active', button.dataset.view === state.view);
-      button.setAttribute('aria-pressed', String(button.dataset.view === state.view));
-    });
     const feedName = state.data.feeds.find((feed) => feed.id === state.feedId)?.title;
-    $('#page-title').textContent = feedName || (state.view === 'saved' ? 'Saved articles' : 'All updates');
+    $('#page-title').textContent = feedName || 'All updates';
     $('#page-subtitle').textContent = feedName ? `Latest stories from ${feedName}.` : 'The most important stories from your feeds, first.';
     $('#results-label').textContent = `${items.length} ${items.length === 1 ? 'ARTICLE' : 'ARTICLES'}`;
     renderFeeds();
@@ -164,7 +141,7 @@
     if (!items.length) {
       const empty = document.createElement('div');
       empty.className = 'empty-state';
-      empty.textContent = state.query ? 'No articles match your search.' : state.view === 'saved' ? 'No saved articles yet.' : state.data.feeds.length ? 'No other articles are available.' : 'No feeds configured yet. Add public RSS URLs in config/feeds.json.';
+      empty.textContent = state.query ? 'No articles match your search.' : state.data.feeds.length ? 'No other articles are available.' : 'No feeds configured yet. Add public RSS URLs in config/feeds.json.';
       list.append(empty);
     } else {
       items.forEach((item) => list.append(renderArticle(item)));
@@ -190,12 +167,13 @@
     }
   }
 
-  document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
-    state.view = button.dataset.view;
+  $('[data-view="all"]').addEventListener('click', () => {
+    state.feedId = null;
+    state.query = '';
+    $('#search-input').value = '';
     render();
-  }));
+  });
   $('#priority-nav').addEventListener('click', () => {
-    state.view = 'all';
     state.feedId = null;
     state.query = '';
     $('#search-input').value = '';
