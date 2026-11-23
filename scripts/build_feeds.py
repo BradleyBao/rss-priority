@@ -142,7 +142,7 @@ def advisory_status(cve):
         advisories = github_json(f"/advisories?cve_id={cve}&per_page=10")
         severity = None
         for advisory in advisories if isinstance(advisories, list) else []:
-            if advisory.get("cve_id", "").upper() != cve:
+            if (advisory.get("cve_id") or "").upper() != cve:
                 continue
             if advisory.get("severity") == "critical":
                 severity = "critical"
@@ -163,7 +163,7 @@ def advisory_status(cve):
                     vendor = github_json(f"/repos/{match[1]}/{match[2]}/security-advisories/{match[3]}")
                 except (OSError, ValueError, json.JSONDecodeError, KeyError, TypeError):
                     continue
-                if vendor.get("cve_id", "").upper() == cve and (vendor.get("withdrawn_at") or has_patched_versions(vendor)):
+                if (vendor.get("cve_id") or "").upper() == cve and (vendor.get("withdrawn_at") or has_patched_versions(vendor)):
                     return {"severity": severity, "cleared": True}
         return {"severity": severity, "cleared": False}
     except (OSError, ValueError, json.JSONDecodeError, KeyError, TypeError):

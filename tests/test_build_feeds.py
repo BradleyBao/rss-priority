@@ -169,6 +169,20 @@ class PriorityTests(unittest.TestCase):
             status = build_feeds.advisory_status("CVE-2024-4577")
         self.assertEqual(status, {"severity": "critical", "cleared": True})
 
+    def test_vendor_advisory_without_cve_id_does_not_abort_build(self):
+        public = [{"cve_id": "CVE-2099-12345", "severity": "critical", "vulnerabilities": [],
+                   "references": ["https://github.com/example/project/security/advisories/GHSA-abcd-1234-wxyz"]}]
+        vendor = {"cve_id": None, "vulnerabilities": [{"patched_versions": "1.2.3"}]}
+        with patch.object(build_feeds, "github_json", side_effect=[public, vendor]):
+            status = build_feeds.advisory_status("CVE-2099-12345")
+        self.assertEqual(status, {"severity": "critical", "cleared": False})
+
+    def test_public_advisory_without_cve_id_is_skipped(self):
+        advisories = [{"cve_id": None, "severity": "critical"}]
+        with patch.object(build_feeds, "github_json", return_value=advisories):
+            status = build_feeds.advisory_status("CVE-2099-12345")
+        self.assertEqual(status, {"severity": None, "cleared": False})
+
 
 if __name__ == "__main__":
     unittest.main()
